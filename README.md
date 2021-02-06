@@ -403,28 +403,28 @@ Technically, `x` and `y` have the same value. Both are empty objects. However, w
 ```javascript
 console.log("hello");
 
-setTimeout(() => console.log("hey"), 1);
-setTimeout(() => console.log("kiora"), 2);
 setTimeout(() => console.log("world"), 0);
 
 console.log("hi");
 ```
 
-- A: "hello" "hey" "kiora" "world" "hi"
-- B: "hello" "hi" "hey" "kiora" "world"
-- C: "hello" "hi" "world" "hey" "kiora"
-- D: "hello" "hi" "hey" "world" "kiora"
+- A: "hello" -> "world" -> "hi"
+- B: "hello" -> "hi" -> "world"
+- C: "hi" -> "world" -> "hello"
+- D: "hi" -> "hello" -> "world"
 
 <details><summary><b>Answer</b></summary>
 <p>
 
-#### Answer: D
+#### Answer: B
 
-Given that three setTimeout() functions will be kept in the `task queue` before jumping back to `stack`, "hello" and "hi" will be printed first, then A is totally incorrect.
+Given that the function setTimeout() will be kept in the `task queue` before jumping back to `stack,` "hello" and "hi" will be printed first, then A is incorrect. That is also the case of the answers C and D.
 
-We might have the feeling that three setTimeout() functions should be executed in the order "world" -> "hey" -> "kiora" providing that the time we have set are 0 mil second -> 1 mil second -> 2 mil second respectively. Yet, there is no different between 0 and 1 mil second. That is why we will see "hey" in the next. "world" is being executed then and following by the last on "kiora".
+No matter how many seconds you set to the `setTimeout()` function, it will run after synchronous code. So we will get "hello" first as it is put into the call stack first. Though the `setTimeout()` is then being put into the call stack, it will subsequently offload to web API (or Node API) and then being called when other synchronous codes are cleared. It means we then get "hi" and finally "world".
 
-For reference, read this https://stackoverflow.com/questions/8341803/difference-between-settimeoutfn-0-and-settimeoutfn-1
+So B is the correct answer.
+
+Credit: @kaitoubg (voz) for your suggestion regarding the ` timeout throttled` by which I have decided to alter the question slightly. It will ensure that readers will not get confused as the previous code might bring out different results when tested on other browsers or environments. The main point of the question is about the discrepancy between the synchronous code and asynchronous code when using `setTimeout.`.
 
 </p>
 </details>
@@ -2533,18 +2533,16 @@ So the correct answer is B.
 ###### 64. What's the output?
 
 ```javascript
+const App = ([y, x, z]) => {
+  return () => {
+    ++x;
+    return () => {
+      return x++;
+    };
+  };
+};
 
-const App = ([y, x, z]) => {			
-	return ()=>{
-			++x
-		return ()=>{
-			return x++;
-		}
-	}	
-}
-
-console.log(App([10, 20, 30, 40])()())
-
+console.log(App([10, 20, 30, 40])()());
 ```
 
 - A: 10
@@ -2561,7 +2559,7 @@ To answer the question raised on the above code snippet, you might want to revis
 
 First, `currying function` means we convert a function with multiple parameters into multiple functions with a SINGLE parameter. Then you can easily manipulate the flow of the data. Noted that `currying function` is relevant to `higher-order function`, you might want to have a look.
 
-`destructing array or object` means we attempt to extract a complex array or object more conveniently. For example, `[y, x, z] = [10, 20, 30, 40]` will extract y, x and z with the value 10, 20 and 30 respectively. 
+`destructing array or object` means we attempt to extract a complex array or object more conveniently. For example, `[y, x, z] = [10, 20, 30, 40]` will extract y, x and z with the value 10, 20 and 30 respectively.
 
 The last thing is incremental operator here `++x` returns 21 but `x++` does not as it still returns 21.
 
@@ -2573,19 +2571,20 @@ So the correct answer is C.
 ###### 65. What's the output?
 
 ```javascript
-
 const numbers = [5, 6, 7];
 
-function callback(accumulator, currentValue){
-	return accumulator + currentValue;
+function callback(accumulator, currentValue) {
+  return accumulator + currentValue;
 }
 
 const theCallBack = (accumulator, currentValue) => accumulator + currentValue;
 
-const sum = numbers.reduce(callback, numbers.reduce(theCallBack, numbers.reduce(theCallBack, 7)));
+const sum = numbers.reduce(
+  callback,
+  numbers.reduce(theCallBack, numbers.reduce(theCallBack, 7))
+);
 
-console.log(sum); 
-
+console.log(sum);
 ```
 
 - A: 54
@@ -2598,7 +2597,7 @@ console.log(sum);
 
 #### Answer: D
 
-`Array.prototype.reduce()` is a bit perplexed built-in method that allows you to manipulate data in an array. It returns a single value from the array predefined as in the case with `map` or `filter`. The syntaxt of the function is `arr.reduce(callback( accumulator, currentValue, [, index[, array]] )[, initialValue])`, so it accepts a callback function with four arguments including `accumulator`, `currentValue`, `currentIndex` (optional) and `array` (optional). 
+`Array.prototype.reduce()` is a bit perplexed built-in method that allows you to manipulate data in an array. It returns a single value from the array predefined as in the case with `map` or `filter`. The syntaxt of the function is `arr.reduce(callback( accumulator, currentValue, [, index[, array]] )[, initialValue])`, so it accepts a callback function with four arguments including `accumulator`, `currentValue`, `currentIndex` (optional) and `array` (optional).
 
 The second argument of the `reduce` method, which is optional, is called `initialValue` that will be counted as the first element with the index 0 when `reduce` is executing. If `initialValue` is not provided, then `reduce` will run with the index 1 instead. `reduce()` sounds complicated, but truly it is not. In case you want to revise the function, kindly take a look at MDN here: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce
 
@@ -2614,21 +2613,17 @@ So the correct answer is D.
 </p>
 </details>
 
-
-
 ###### 66. What's the output?
 
 ```javascript
+const a = { name: "hoccoban.com" };
+const b = { name: "youtube.com/hoccoban" };
 
-const a = {name: "hoccoban.com"};
-const b = {name: "youtube.com/hoccoban"};
+const first = { ...a }.name.length;
+const second = { ...a, ...b }.name.length;
+const third = { ...a, ...b, name: "hello" }.name.length;
 
-const first = {...a}.name.length;
-const second = {...a, ...b}.name.length;
-const third = {...a, ...b, name: "hello"}.name.length;
-
-console.log(first + second + third)
-
+console.log(first + second + third);
 ```
 
 - A: 12
@@ -2645,7 +2640,7 @@ The code snippet above is relatively trivial. What we can learn from it is all a
 
 We have two simple objects which both have the same key `name` but different values. The constant `first` gives us the length of the string value of the keyword `name` that is copied from `a`. So, `first` is now 12.
 
-The constant `second` merges `a` and `b` into one object. However, as `b` has the same key `name` with `a', the object created by merging two objects will have the value of `b`. It means the constant`second` gives us the length of `youtube.com/hoccoban`, which is 20.
+The constant `second` merges `a` and `b` into one object. However, as `b` has the same key `name` with `a`, the object created by merging two objects will have the value of `b`. It means the constant `second` gives us the length of `youtube.com/hoccoban`, which is 20.
 
 `third` does the same thing with `first` and `second` as it merges two objects into one. However, it also adds another key-value to the object. Coincidently, the key now is `name`, which is the same with the key attained from `a` and `b`. Hence, this key and value will take over the merged object. That means `third` is the length of the string `hello`, which is 5.
 
@@ -2656,6 +2651,285 @@ So the correct answer is B.
 </p>
 </details>
 
+###### 67. What's the output?
+
+```javascript
+const hocCoBan = {};
+
+Object.defineProperty(hocCoBan, "domain", {
+  value: "hoccoban.com",
+});
+
+async function App({ year, age }) {
+  return year - age + hocCoBan.domain.length;
+}
+
+App({ year: 2021, age: 30 }).then((r) => console.log(r));
+```
+
+- A: 2051
+- B: 2001
+- C: 30
+- D: 2003
+
+<details><summary><b>Answer</b></summary>
+<p>
+
+#### Answer: D
+
+The code snippet above seems complicated regarding how we take advantage of `Object.defineProperty` to add key and value to the object `hocCoBan`. In fact, `Object.defineProperty` has a couple of handy features that allow us to control the behavior of the object in some situations where we want to make sure that the object created is mutable or not, whether it is iterable (using `for..in`) and so for. For example, if we set `configurable: false` when we declare an object with `Object.defineProperty`, we cannot use `delete` operator to delete the object's property. We cannot change the value of that property as well.
+
+The second "take away" message when reading the code above is the unpacking object technique, or a more frequent term is the destructing object. Say you have an object with two keys called `year` and `age`, then you can get them by using the destructing object technique as follows: `{year, age} = theOBject;`. In the code above, when declaring the function `App`, we also use destructing object technique to get the key from the object and use them as the parameters.
+
+If you are familiar with asynchronous code in JavaScript when using the keyword `async,` it is not a big deal to understand why we need to use `then` to get the function `App` being called. It fact, `async` always returns a promise, so we need to use `then` method to get the data we want.
+
+The flow of the code is: 2021 - 30 + `"hoccoban.com".length` (which is 12).
+
+The final result is 2003. So the correct answer is D.
+
+</p>
+</details>
+
+###### 68. What's the output?
+
+```javascript
+class hoccoban {
+  #thisyear = 2021;
+  constructor(covidTheFirstYear) {
+    this.covidTheFirstYear = covidTheFirstYear;
+  }
+
+  getThisYear() {
+    return this.#thisyear;
+  }
+
+  getCovidFirstYear() {
+    return this.covidTheFirstYear;
+  }
+}
+
+const message = new hoccoban(2019);
+
+const result =
+  hoccoban.hello ?? message.getThisYear() - message.getCovidFirstYear();
+
+console.log(result);
+```
+
+- A: NaN
+- B: 2019
+- C: undefined
+- D: 2
+
+<details><summary><b>Answer</b></summary>
+<p>
+
+#### Answer: D
+
+This challenge partly illustrates the newest features of JavaScript detailed in ECMAScript 2020 or ES11.
+
+Now you can declare a private property in a class thanks to the symbol `#`. Like other languages, a private property in JavaScript can only be accessed from inside the class. It will trigger an error when you attempt to call it outside the class, surely.
+
+The second feature you might see on the code snippet above is the `nullish coalescing operator` or `??`. When declaring some variable such as `let myVariable = number ?? 7`, if the variable `number` is either `undefined` or `null`, the variable `myVariable` will be assigned the value `7`.
+
+So `hoccoban.hello` means `undefined` because we have not added any value yet. Then by using `nullish coalescing operator` with `??` the variable `result` simply returns 2 as `message.getThisYear()` gives us 2020 and `message.getCovidFirstYear()` gives us 2019. Note that we can access the private property outside of the class via a method, as in the method `getThisYear()`.
+
+So the correct answer is D.
+
+</p>
+</details>
+
+###### 69. What's the output?
+
+```javascript
+const keyWords = "hello world";
+
+const entries = keyWords.split(" ");
+
+const collections = [];
+
+entries.forEach((entry, index) => {
+  collections.push([entry, index]);
+});
+
+const objectResult = Object.fromEntries(collections);
+
+const { world } = objectResult;
+
+console.log(world);
+```
+
+- A: 0
+- B: true
+- C: 1
+- D: "hello"
+
+<details><summary><b>Answer</b></summary>
+<p>
+
+#### Answer: C
+
+The code snippet above is not challenging for those who have had decent experience working with ES6 I suppose. First we turn `keywords` into an array using `split()` function. Then we create a variable named `collection`, which initially is an empty array.
+
+Take a closer look at the `forEach` function, which allows us to run a for loop through the whole array `entries`, you might realize that `push([entry, index]);` add an array to `collections` rather than an element.
+
+The next step is by taking advantage of `Object.fromEntries()` that converts an array with at least two elements (the form of key-value) to an object. This built-in method is the reversing version of `Object.entries()`, which extracts key and value from an object to an array.
+
+`const { world } = objectResult;` is nothing special as we unpack the object using destructing object technique supported since ES6. As the object `objectResult` has `hello` and `world` with two respective values 0 and 1, we get 1 when printing out `world`, so the correct answer is C.
+
+</p>
+</details>
+
+###### 70. What's the output?
+
+```javascript
+const target = {
+  domainname: "hoccoban.com",
+  author: "vuong",
+};
+
+const handler = {
+  get: function (thetarget, prop, receiver) {
+    if (prop === "domainname") {
+      return thetarget.author.length;
+    } else {
+      return thetarget.domainname.length;
+    }
+  },
+};
+
+const proxyObject = new Proxy(target, handler);
+
+console.log(proxyObject.domainname > proxyObject.author);
+```
+
+- A: true
+- B: false
+- C: 12
+- D: 5
+
+<details><summary><b>Answer</b></summary>
+<p>
+
+#### Answer: B
+
+We have implemented a basic use case of `Proxy` in the code snippet above. Each `proxyObject` object has two parameters (`target` and `handler`). `handler` is also an object.
+
+Apart from `get()` as you might see, `handler` also has a handful of other methods such as `set`, `defineProperty()`, `has()` and so forth. Sometimes, people may say a `method is a trap` of a proxy object.
+
+Back to the code above, the `get` method allows us to modify how the proxy object will display the value of the original object. `thetarget` is the original object, and `prop` is the property of that object as you might guess. You might choose another name in the `get` function if you want when creating your handler.
+
+The `handler` above calculates the length of the string value of the two properties. Based on the flow of `if - else` code, it swaps the returned value.
+
+So `proxyObject.domainname` now should be understood as `target.author.length` which means 5 and `proxyObject.author` means `target.domainname.length` which gives us 12. So the output is `false`. The correct answer is B.
+
+If you do the same thing with the original, it should be something like `console.log(target.domainname.length > target.author.length)` which returns `true`.
+
+I believe that `Proxy` is worth to have a closer look. If that is the case, no place is better than MDN. So have a go at: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+
+</p>
+</details>
+
+###### 71. What's the output?
+
+```javascript
+const promise1 = new Promise((resolve, reject) => {
+  setTimeout(() => resolve("hello"), 5000);
+});
+
+const promise2 = new Promise((resolve, reject) => {
+  setTimeout(() => resolve("world"), 4000);
+});
+
+(async () => {
+  console.time("timeleap");
+
+  const p1 = await promise1;
+
+  const p2 = await promise2;
+
+  console.log(`${p1} ${p2}`);
+
+  console.timeEnd("timeleap");
+})();
+```
+
+- A: Promise { <pending> } - "hello world" - timeleap: ~ 5000 ms
+- B: Promise { <pending> } - "hello world" - timeleap: ~ 9000 ms
+- C: Promise { <pending> } - "hello world" - timeleap: ~ 4000 ms
+- D: Promise { <pending> } - "hello world" - timeleap: ~ 1000 ms
+
+<details><summary><b>Answer</b></summary>
+<p>
+
+#### Answer: A
+
+We have already had a couple of questions regarding asynchronous code in general and handling the data flow with promise in particular. If you understand how JS works, I am sure that the code challenge above is not difficult.
+
+We have two promises; each takes 5 or 4 seconds to complete the code and returns "hello" (in `promise1`) and "world" (in `promise2`)  in the `resolve` methods, respectively.
+
+Then we take advantage of the `async` function to chain the two promises to get the result we want. As `async` function returns a `promise` so to get the returned value from `async` function, we have to use `then()` method. As we do not do that here, then we get `Promise { <pending> }`.
+
+The question is, does `p2` have to wait and only run after `p1` complete? It turns out that it does not. Both `p1` and `p2` run simultaneously in the task queue thanks to web API or nodejs API (the environments by which JavaScript engine runs). So it will not take 9 seconds to finish the code but solely around 5. It means `promise1` takes 5 seconds to complete and at the same time, `promise2` reaches the bottom within only 4 seconds.
+
+That is why A is the correct answer. 
+
+Updated: What happens if `promise2` takes 6 seconds instead of 4 ? Well, as `promise2` runs almost at the same time with `promise1`, it will only take 1 second after the `promise1` completes. So in total, it takes approximately 6 seconds. 
+
+</p>
+</details>
+
+
+###### 72. What's the output?
+
+```javascript
+const promise1 = () => {
+  return new Promise((resolve, reject) => {
+  setTimeout(() => resolve("hello"), 5000);
+});
+}
+
+const promise2 = () => {
+  return new Promise((resolve, reject) => {
+  setTimeout(() => resolve("world"), 4000);
+});
+}
+
+(async () => {
+  console.time("timeleap");
+
+  const p1 = await promise1();
+
+  const p2 = await promise2();
+
+  console.log(`${p1} ${p2}`);
+
+  console.timeEnd("timeleap");
+})();
+```
+
+- A: Promise { <pending> } - "hello world" - timeleap: ~ 5000 ms
+- B: Promise { <pending> } - "hello world" - timeleap: ~ 9000 ms
+- C: Promise { <pending> } - "hello world" - timeleap: ~ 4000 ms
+- D: Promise { <pending> } - "hello world" - timeleap: ~ 1000 ms
+
+<details><summary><b>Answer</b></summary>
+<p>
+
+#### Answer: B
+
+The 72nd challenge is almost identical to the 71st. Please take a closer look.
+
+The difference lies in the way we declare a promise. In question 71st, we use two constants, and both return promise, but in question 72, we declare functions and each returns a promise.
+
+If you run the code, you might be surprised with the result as it takes around 9 seconds to complete the code in place of 5 seconds as in the previous question.
+
+It means that  `const p1 = await promise1;` and `const p1 = await promise1();` are different as the latter (a function) might block the callstack and `const p2 = await promise2();` can only be called after the `p1` completes. The two do not run in parallel as the two promises in the previous question.
+
+As it takes 9 seconds to finish, B is the correct answer. 
+
+</p>
+</details>
 
 
 
